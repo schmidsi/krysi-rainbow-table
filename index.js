@@ -8,16 +8,19 @@ assert(md5('0000000') === '29c3eea3f305d6b823f562ac4be35217');
 const initialPassword = '0000000';
 const passwordLength = 7;
 const chainLength = 2000;
+const allowedChars = 36;
 
-const allowedChars = [
-  '0', '1', '2', '3', '4', '5',
-  '6', '7', '8', '9', 'a', 'b',
-  'c', 'd', 'e', 'f', 'g', 'h',
-  'i', 'j', 'k', 'l', 'm', 'n',
-  'o', 'p', 'q', 'r', 's', 't',
-  'u', 'v', 'w', 'x', 'y', 'z',
-];
-assert(allowedChars.length, 36);
+// pads a string with 0s in front according to the specified chunkSize
+const pad = (string, chunkSize = passwordLength, char = '0') => {
+  let padded = string;
+  while (padded.length % chunkSize !== 0) padded = char + padded;
+  return padded;
+};
+assert(pad('1') === '0000001');
+
+const chains = Array(chainLength).fill().map((value, index) => pad(index.toString(allowedChars)));
+assert(chains[0] === '0000000');
+assert(chains[12] === '000000c');
 
 const reductionFunction = (hashString, step) => {
   const hashAsNumber = new BigNumber(hashString, 16);
@@ -25,8 +28,8 @@ const reductionFunction = (hashString, step) => {
   let reducedPassword = '';
 
   initialPassword.split('').forEach(() => {
-    reducedPassword += allowedChars[stepHash.modulo(allowedChars.length)];
-    stepHash = stepHash.dividedToIntegerBy(allowedChars.length);
+    reducedPassword += stepHash.modulo(allowedChars).toString(36);
+    stepHash = stepHash.dividedToIntegerBy(allowedChars);
   });
 
   return reducedPassword.split('').reverse().join('');
