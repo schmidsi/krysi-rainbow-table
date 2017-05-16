@@ -19,7 +19,7 @@ assert(pad('1') === '0000001');
 
 const chains = Array(13 /* chainLength*/).fill().map((value, index) => pad(index.toString(allowedChars)));
 assert(chains[0] === '0000000');
-// assert(chains[12] === '000000c');
+assert(chains[12] === '000000c');
 
 const reductionFunction = (hashString, step) => {
   const hashAsNumber = new BigNumber(hashString, 16);
@@ -36,27 +36,43 @@ const reductionFunction = (hashString, step) => {
 assert(reductionFunction('29c3eea3f305d6b823f562ac4be35217', 0) === '87inwgn');
 
 const rainbowChain = chains.map((password) => {
-  console.log('calculating row', password);
+  let lastHash = md5(password);
 
-  const row = [{
-    password,
-    hash: md5(password),
-  }];
+  for (let i = 0; i < chainLength; i += 1) {
+    if (password === '0000000') {
+      if (i === 0) {
+        assert(lastHash === '29c3eea3f305d6b823f562ac4be35217');
+        assert(reductionFunction(lastHash, i) === '87inwgn');
+      } else if (i === 1) {
+        assert(lastHash === '12e2feb5a0feccf82a8d4172a3bd51c3');
+        assert(reductionFunction(lastHash, i) === 'frrkiis');
+      } else if (i === 2) {
+        assert(lastHash === '437988e45a53c01e54d21e5dc4ae658a');
+        assert(reductionFunction(lastHash, i) === 'dues6fg');
+      } else if (i === 3) {
+        assert(lastHash === 'c0e9a2f2ae2b9300b6f7ef3e63807e84');
+      }
+    }
 
-  for (let i = 0; i < 2000; i += 1) {
-    row.push({
-      password: reductionFunction(row[i].hash, i),
-      hash: md5(reductionFunction(row[i].hash, i)),
-    });
+    lastHash = md5(reductionFunction(lastHash, i));
   }
 
-  return row;
+  console.log('row:', {
+    password,
+    end: reductionFunction(lastHash, chainLength),
+  });
+
+  return {
+    start: password,
+    end: reductionFunction(lastHash, chainLength),
+  };
 });
+assert(rainbowChain[0].start === '0000000');
 
-console.log(rainbowChain);
 
-assert(rainbowChain[0][1].password === '87inwgn');
-assert(rainbowChain[0][1].hash === '12e2feb5a0feccf82a8d4172a3bd51c3');
-assert(rainbowChain[0][2].password === 'frrkiis');
-assert(rainbowChain[0][2].hash === '437988e45a53c01e54d21e5dc4ae658a');
+const sniffedHash = '1d56a37fb6b08aa709fe90e12ca59e12';
+
+for (let i = chainLength; i >= 0; i -= 1) {
+  const lastPassword = reductionFunction(sniffedHash);
+}
 
