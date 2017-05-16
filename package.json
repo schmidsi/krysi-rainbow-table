@@ -1,0 +1,24 @@
+{
+  "name": "krysi-rainbow-table",
+  "version": "0.0.1",
+  "description": "MD5 rainbow table attack",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/schmidsi/krysi-rainbow-table.git"
+  },
+  "keywords": [
+    "krysi",
+    "fhnw",
+    "rainbow-table"
+  ],
+  "author": "Simon Emanuel Schmid <simon.schmid@students.fhnw.ch>",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/schmidsi/krysi-rainbow-table/issues"
+  },
+  "homepage": "https://github.com/schmidsi/krysi-rainbow-table#readme"
+}
