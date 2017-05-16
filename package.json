@@ -4,6 +4,7 @@
   "description": "MD5 rainbow table attack",
   "main": "index.js",
   "scripts": {
+    "start": "node .",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -28,5 +29,9 @@
     "eslint": "^3.19.0",
     "eslint-config-airbnb-base": "^11.2.0",
     "eslint-plugin-import": "^2.2.0"
+  },
+  "dependencies": {
+    "bignumber.js": "^4.0.2",
+    "blueimp-md5": "^2.7.0"
   }
 }
