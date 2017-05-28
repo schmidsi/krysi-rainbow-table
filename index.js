@@ -47,7 +47,7 @@ try {
   rainbowTable = chains.map((password, index) => {
     let lastHash = md5(password);
 
-    for (let i = 0; i < chainLength; i += 1) {
+    for (let i = 0; i < chainLength - 1; i += 1) {
       if (password === '0000000') {
         if (i === 0) {
           assert(lastHash === '29c3eea3f305d6b823f562ac4be35217');
@@ -67,15 +67,17 @@ try {
     }
 
     console.log('row:', {
+      index,
+      date: (new Date()).toJSON(),
       password,
-      end: reductionFunction(lastHash, chainLength),
+      end: reductionFunction(lastHash, chainLength - 1),
     });
 
     return {
       index,
       date: (new Date()).toJSON(),
       start: password,
-      end: reductionFunction(lastHash, chainLength),
+      end: reductionFunction(lastHash, chainLength - 1),
     };
   });
   assert(rainbowTable[0].start === '0000000');
@@ -83,16 +85,24 @@ try {
   fs.writeFileSync('rainbow-table.json', JSON.stringify(rainbowTable, null, 4));
 }
 
-let lastHash = '1d56a37fb6b08aa709fe90e12ca59e12';
+const hashToCrack = '1d56a37fb6b08aa709fe90e12ca59e12';
 
 let rowIndex = -1;
 for (let i = chainLength; i >= 0 && rowIndex < 0; i -= 1) {
-  const lastPassword = reductionFunction(lastHash, i);
-  rowIndex = rainbowTable.findIndex(chain => chain.end === lastPassword);
+  let lastPassword;
+  let lastHash = hashToCrack;
 
-  if (rowIndex === -1) {
+  for (let j = i; j <= chainLength; j += 1) {
+    lastPassword = reductionFunction(lastHash, i);
     lastHash = md5(lastPassword);
+
+    const prindex = rainbowTable.findIndex(chain => chain.end === lastPassword);
+    if (prindex > -1) {
+      console.log('premature result', { chain: rainbowTable[prindex], prindex, i, j, lastPassword, lastHash });
+    }
   }
+
+  rowIndex = rainbowTable.findIndex(chain => chain.end === lastPassword);
 
   console.log(i, lastPassword, lastHash, rowIndex);
 }
