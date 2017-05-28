@@ -1,4 +1,5 @@
 const assert = require('assert');
+const fs = require('fs');
 const md5 = require('blueimp-md5');
 const BigNumber = require('bignumber.js');
 
@@ -7,6 +8,7 @@ assert(md5('0000000') === '29c3eea3f305d6b823f562ac4be35217');
 
 const passwordLength = 7;
 const chainLength = 2000;
+const rows = 2000; // 2000;
 const allowedChars = 36;
 
 // pads a string with 0s in front according to the specified chunkSize
@@ -17,13 +19,13 @@ const pad = (string, chunkSize = passwordLength, char = '0') => {
 };
 assert(pad('1') === '0000001');
 
-const chains = Array(13 /* chainLength*/).fill().map((value, index) => pad(index.toString(allowedChars)));
+const chains = Array(rows).fill().map((value, index) => pad(index.toString(allowedChars)));
 assert(chains[0] === '0000000');
 assert(chains[12] === '000000c');
 
 const reductionFunction = (hashString, step) => {
   const hashAsNumber = new BigNumber(hashString, 16);
-  let stepHash = hashAsNumber.plus(step);
+  let stepHash = hashAsNumber.add(step);
   let reducedPassword = '';
 
   Array(passwordLength).fill().forEach(() => {
@@ -34,45 +36,65 @@ const reductionFunction = (hashString, step) => {
   return reducedPassword.split('').reverse().join('');
 };
 assert(reductionFunction('29c3eea3f305d6b823f562ac4be35217', 0) === '87inwgn');
+assert(reductionFunction('39767d6ff75ceba5d3bf2f64b87f3ffa', 0) === '1ri5ptm');
 
-const rainbowChain = chains.map((password) => {
-  let lastHash = md5(password);
+let rainbowTable;
 
-  for (let i = 0; i < chainLength; i += 1) {
-    if (password === '0000000') {
-      if (i === 0) {
-        assert(lastHash === '29c3eea3f305d6b823f562ac4be35217');
-        assert(reductionFunction(lastHash, i) === '87inwgn');
-      } else if (i === 1) {
-        assert(lastHash === '12e2feb5a0feccf82a8d4172a3bd51c3');
-        assert(reductionFunction(lastHash, i) === 'frrkiis');
-      } else if (i === 2) {
-        assert(lastHash === '437988e45a53c01e54d21e5dc4ae658a');
-        assert(reductionFunction(lastHash, i) === 'dues6fg');
-      } else if (i === 3) {
-        assert(lastHash === 'c0e9a2f2ae2b9300b6f7ef3e63807e84');
+try {
+  rainbowTable = JSON.parse(fs.readFileSync('rainbow-table.json'));
+} catch (e) {
+  console.log('creating rainbow-table');
+  rainbowTable = chains.map((password, index) => {
+    let lastHash = md5(password);
+
+    for (let i = 0; i < chainLength; i += 1) {
+      if (password === '0000000') {
+        if (i === 0) {
+          assert(lastHash === '29c3eea3f305d6b823f562ac4be35217');
+          assert(reductionFunction(lastHash, i) === '87inwgn');
+        } else if (i === 1) {
+          assert(lastHash === '12e2feb5a0feccf82a8d4172a3bd51c3');
+          assert(reductionFunction(lastHash, i) === 'frrkiis');
+        } else if (i === 2) {
+          assert(lastHash === '437988e45a53c01e54d21e5dc4ae658a');
+          assert(reductionFunction(lastHash, i) === 'dues6fg');
+        } else if (i === 3) {
+          assert(lastHash === 'c0e9a2f2ae2b9300b6f7ef3e63807e84');
+        }
       }
+
+      lastHash = md5(reductionFunction(lastHash, i));
     }
 
-    lastHash = md5(reductionFunction(lastHash, i));
-  }
+    console.log('row:', {
+      password,
+      end: reductionFunction(lastHash, chainLength),
+    });
 
-  console.log('row:', {
-    password,
-    end: reductionFunction(lastHash, chainLength),
+    return {
+      index,
+      date: (new Date()).toJSON(),
+      start: password,
+      end: reductionFunction(lastHash, chainLength),
+    };
   });
+  assert(rainbowTable[0].start === '0000000');
 
-  return {
-    start: password,
-    end: reductionFunction(lastHash, chainLength),
-  };
-});
-assert(rainbowChain[0].start === '0000000');
-
-
-const sniffedHash = '1d56a37fb6b08aa709fe90e12ca59e12';
-
-for (let i = chainLength; i >= 0; i -= 1) {
-  const lastPassword = reductionFunction(sniffedHash);
+  fs.writeFileSync('rainbow-table.json', JSON.stringify(rainbowTable, null, 4));
 }
 
+let lastHash = '1d56a37fb6b08aa709fe90e12ca59e12';
+
+let rowIndex = -1;
+for (let i = chainLength; i >= 0 && rowIndex < 0; i -= 1) {
+  const lastPassword = reductionFunction(lastHash, i);
+  rowIndex = rainbowTable.findIndex(chain => chain.end === lastPassword);
+
+  if (rowIndex === -1) {
+    lastHash = md5(lastPassword);
+  }
+
+  console.log(i, lastPassword, lastHash, rowIndex);
+}
+
+console.log(rowIndex);
