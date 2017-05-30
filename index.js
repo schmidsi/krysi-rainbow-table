@@ -120,11 +120,8 @@ for (let i = 0; i >= 0 && rowIndex < 0; i -= 1) {
   console.log(i, lastPassword, lastHash, rowIndex);
 }
 
-console.log(rowIndex);
-
 // lookup the password in the given chain
-// TODO: use rowIndex from lookup
-const containingChain = rainbowTable[1000];
+const containingChain = rainbowTable[rowIndex];
 let lastHash = md5(containingChain.start);
 for (let i = 0; i < chainLength - 1; i += 1) {
   const lastPassword = reductionFunction(lastHash, i);
