@@ -6,10 +6,16 @@ const BigNumber = require('bignumber.js');
 // check if the md5 function corresponds to the given rainbow-table chain
 assert(md5('0000000') === '29c3eea3f305d6b823f562ac4be35217');
 
+
 const passwordLength = 7;
 const chainLength = 2000;
 const rows = 2000; // 2000;
 const allowedChars = 36;
+
+const hashToCrack = '1d56a37fb6b08aa709fe90e12ca59e12';
+// cracked password from https://crackhash.com/ as reference
+const crackedPassword = '0bgec3d';
+assert(md5(crackedPassword) === hashToCrack);
 
 // pads a string with 0s in front according to the specified chunkSize
 const pad = (string, chunkSize = passwordLength, char = '0') => {
@@ -46,6 +52,7 @@ try {
   console.log('creating rainbow-table');
   rainbowTable = chains.map((password, index) => {
     let lastHash = md5(password);
+    let chainContainsPW = false;
 
     for (let i = 0; i < chainLength - 1; i += 1) {
       if (password === '0000000') {
@@ -63,18 +70,22 @@ try {
         }
       }
 
-      lastHash = md5(reductionFunction(lastHash, i));
-    }
+      const lastPassword = reductionFunction(lastHash, i);
+      lastHash = md5(lastPassword);
 
-    console.log('row:', {
-      index,
-      date: (new Date()).toJSON(),
-      password,
-      end: reductionFunction(lastHash, chainLength - 1),
-    });
+      if (lastHash === hashToCrack) {
+        console.log('### verified hashToCrack is in rainbow table at row: ', i);
+      }
+
+      if (lastPassword === crackedPassword) {
+        console.log('### verified crackedPassword is in rainbow table at row: ', i);
+        chainContainsPW = i;
+      }
+    }
 
     return {
       index,
+      chainContainsPW,
       date: (new Date()).toJSON(),
       start: password,
       end: reductionFunction(lastHash, chainLength - 1),
@@ -84,8 +95,6 @@ try {
 
   fs.writeFileSync('rainbow-table.json', JSON.stringify(rainbowTable, null, 4));
 }
-
-const hashToCrack = '1d56a37fb6b08aa709fe90e12ca59e12';
 
 let rowIndex = -1;
 for (let i = chainLength; i >= 0 && rowIndex < 0; i -= 1) {
@@ -108,3 +117,4 @@ for (let i = chainLength; i >= 0 && rowIndex < 0; i -= 1) {
 }
 
 console.log(rowIndex);
+
