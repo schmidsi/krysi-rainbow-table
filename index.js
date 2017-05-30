@@ -6,7 +6,6 @@ const BigNumber = require('bignumber.js');
 // check if the md5 function corresponds to the given rainbow-table chain
 assert(md5('0000000') === '29c3eea3f305d6b823f562ac4be35217');
 
-
 const passwordLength = 7;
 const chainLength = 2000;
 const rows = 2000; // 2000;
@@ -44,6 +43,7 @@ const reductionFunction = (hashString, step) => {
 assert(reductionFunction('29c3eea3f305d6b823f562ac4be35217', 0) === '87inwgn');
 assert(reductionFunction('39767d6ff75ceba5d3bf2f64b87f3ffa', 0) === '1ri5ptm');
 
+// Create the rainbow table if not existing yet
 let rainbowTable;
 
 try {
@@ -96,8 +96,12 @@ try {
   fs.writeFileSync('rainbow-table.json', JSON.stringify(rainbowTable, null, 4));
 }
 
+console.log(rainbowTable.findIndex(chain => chain.end === 'igmt8ml'));
+
+// find the row that contains the password:
 let rowIndex = -1;
-for (let i = chainLength; i >= 0 && rowIndex < 0; i -= 1) {
+// for (let i = chainLength; i >= 0 && rowIndex < 0; i -= 1) {
+for (let i = 0; i >= 0 && rowIndex < 0; i -= 1) {
   let lastPassword;
   let lastHash = hashToCrack;
 
@@ -118,3 +122,15 @@ for (let i = chainLength; i >= 0 && rowIndex < 0; i -= 1) {
 
 console.log(rowIndex);
 
+// lookup the password in the given chain
+// TODO: use rowIndex from lookup
+const containingChain = rainbowTable[1000];
+let lastHash = md5(containingChain.start);
+for (let i = 0; i < chainLength - 1; i += 1) {
+  const lastPassword = reductionFunction(lastHash, i);
+  lastHash = md5(lastPassword);
+
+  if (lastHash === hashToCrack) {
+    console.log('CRAKKED: The password was', lastPassword);
+  }
+}
